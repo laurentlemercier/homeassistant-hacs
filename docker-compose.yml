@@ -1,12 +1,11 @@
 services:
-  
   hacs-init:
     image: laurentlemercier/homeassistant-hacs-init:latest
+    container_name: homeassistant-init
     volumes:
       - /opt/homeassistant/config:/config
     restart: no
     network_mode: bridge
-  
   homeassistant:
     image: homeassistant/home-assistant:latest
     container_name: homeassistant
@@ -22,5 +21,4 @@ services:
     depends_on:
       hacs-init:
         condition: service_completed_successfully
-        
 networks: {}

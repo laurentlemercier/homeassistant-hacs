@@ -93,3 +93,14 @@ jobs:
           cache-to: type=gha,mode=max
           provenance: mode=max
           sbom: true
+
+      # Étape d'envoi du README.md vers Docker Hub
+      - name: Docker Hub Description
+        uses: peter-evans/dockerhub-description@v4
+        with:
+          username: ${{ secrets.DOCKERHUB_USERNAME }}
+          # Attention : nécessite le mot de passe principal Docker Hub ou un PAT avec scope Read/Write (les PAT Read-Only échoueront ici)
+          password: ${{ secrets.DOCKERHUB_TOKEN }}
+          repository: ${{ env.IMAGE_NAME }}
+          short-description: ${{ github.event.repository.description }}
+          readme-filepath: ./README.md
