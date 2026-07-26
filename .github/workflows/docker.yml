@@ -94,6 +94,8 @@ jobs:
           provenance: mode=max
           sbom: true
   update_readme:
+    steps:
+
       # Étape d'envoi du README.md vers Docker Hub
       - name: Docker Hub Description
         uses: peter-evans/dockerhub-description@v4
