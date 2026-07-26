@@ -2,7 +2,6 @@ name: Build HACS Init image
 
 on:
   workflow_dispatch:
-
   schedule:
     - cron: "0 6 * * *"
 
@@ -10,60 +9,56 @@ env:
   REGISTRY: docker.io
   IMAGE_NAME: laurentlemercier/homeassistant-hacs-init
 
+# Définition des permissions minimales au niveau global
+permissions:
+  contents: read
+
 jobs:
-
   check:
-
     runs-on: ubuntu-latest
-
     outputs:
       version: ${{ steps.version.outputs.version }}
       should_build: ${{ steps.check.outputs.should_build }}
 
     steps:
-
       - name: Get latest HACS version
         id: version
-
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
-
           VERSION=$(curl -fsSL \
+            -H "Authorization: Bearer $GH_TOKEN" \
+            -H "Accept: application/vnd.github+json" \
             https://api.github.com/repos/hacs/integration/releases/latest \
             | jq -r '.tag_name')
 
           echo "version=$VERSION" >> "$GITHUB_OUTPUT"
 
       - name: Check Docker Hub
-
         id: check
-
         run: |
-
           STATUS=$(curl -s \
             -o /dev/null \
             -w "%{http_code}" \
-            https://hub.docker.com/v2/repositories/${IMAGE_NAME}/tags/${{ steps.version.outputs.version }})
+            https://hub.docker.com/v2/repositories/${{ env.IMAGE_NAME }}/tags/${{ steps.version.outputs.version }})
 
           if [ "$STATUS" = "200" ]; then
+            echo "Version dejà présente sur Docker Hub. Annulation du build."
             echo "should_build=false" >> "$GITHUB_OUTPUT"
-          else
+          elif [ "$STATUS" = "404" ]; then
+            echo "Nouvelle version détectée ($STATUS). Lancement du build."
             echo "should_build=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "Erreur lors de la vérification Docker Hub (Code HTTP: $STATUS)"
+            exit 1
           fi
 
   build:
-
     needs: check
-
     if: needs.check.outputs.should_build == 'true'
-
     runs-on: ubuntu-latest
 
-    permissions:
-      contents: read
-      packages: write
-
     steps:
-
       - uses: actions/checkout@v4
 
       - uses: docker/setup-qemu-action@v3
@@ -87,21 +82,14 @@ jobs:
         with:
           context: .
           push: true
-
           platforms: |
             linux/amd64
             linux/arm64
-
           tags: ${{ steps.meta.outputs.tags }}
-
           labels: ${{ steps.meta.outputs.labels }}
-
           build-args: |
             HACS_VERSION=${{ needs.check.outputs.version }}
-
           cache-from: type=gha
           cache-to: type=gha,mode=max
-
           provenance: mode=max
-
           sbom: true
