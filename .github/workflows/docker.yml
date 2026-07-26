@@ -99,7 +99,7 @@ jobs:
 
       # Étape d'envoi du README.md vers Docker Hub
       - name: Docker Hub Description
-        uses: peter-evans/dockerhub-description@v4
+        uses: peter-evans/dockerhub-description@v5
         with:
           username: ${{ secrets.DOCKERHUB_USERNAME }}
           # Attention : nécessite le mot de passe principal Docker Hub ou un PAT avec scope Read/Write (les PAT Read-Only échoueront ici)
