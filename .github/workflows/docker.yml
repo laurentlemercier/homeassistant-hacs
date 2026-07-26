@@ -94,6 +94,7 @@ jobs:
           provenance: mode=max
           sbom: true
   update_readme:
+    runs-on: ubuntu-latest
     steps:
 
       # Étape d'envoi du README.md vers Docker Hub
